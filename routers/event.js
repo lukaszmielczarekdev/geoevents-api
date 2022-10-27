@@ -1,8 +1,10 @@
 import express from "express";
-import { getEvents } from "../controllers/event.js";
+import { getEvents, addEvent } from "../controllers/event.js";
+import auth from "../middleware/auth.js";
 
 const router = express.Router();
 
 router.get("/", getEvents);
+router.post("/", auth, addEvent);
 
 export default router;
