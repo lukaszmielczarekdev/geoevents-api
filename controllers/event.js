@@ -11,10 +11,10 @@ export const getEvents = async (req, res) => {
 };
 
 export const addEvent = async (req, res) => {
-  const { data } = req.body;
+  const event = req.body;
 
   const newEvent = new Event({
-    ...data,
+    ...event,
     creator: req.userId,
   });
 

@@ -1,3 +1,4 @@
+import * as dotenv from "dotenv";
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
@@ -5,6 +6,8 @@ import cors from "cors";
 import eventRouter from "./routers/event.js";
 
 const app = express();
+
+dotenv.config();
 
 app.use(cors());
 app.use("/events", eventRouter);
