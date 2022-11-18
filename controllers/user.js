@@ -10,7 +10,17 @@ import {
   passwordChangeConfirmationMailTemplate,
 } from "../mailService.js";
 
-export const externalsignin = async (req, res) => {
+export const getUsers = async (req, res) => {
+  try {
+    const users = await User.find().select({ _id: 1, name: 1, friends: 1 });
+
+    res.status(200).json(users);
+  } catch (error) {
+    res.status(404).json({ message: error.message });
+  }
+};
+
+export const externalSignIn = async (req, res) => {
   try {
     const { credential } = req.body;
     const decodedData = jwt.decode(credential);
@@ -58,7 +68,7 @@ export const externalsignin = async (req, res) => {
   }
 };
 
-export const signin = async (req, res) => {
+export const signIn = async (req, res) => {
   const { email, password } = req.body;
 
   try {
@@ -94,7 +104,7 @@ export const signin = async (req, res) => {
   }
 };
 
-export const signup = async (req, res) => {
+export const signUp = async (req, res) => {
   const { username, email, password } = req.body;
 
   try {
@@ -139,7 +149,7 @@ export const signup = async (req, res) => {
   }
 };
 
-export const signupdemo = async (req, res) => {
+export const signUpDemo = async (req, res) => {
   try {
     const username = "guest" + generateRandomStringNumber();
     const user = await User.create({
@@ -172,7 +182,7 @@ export const signupdemo = async (req, res) => {
   }
 };
 
-export const resetpassword = async (req, res) => {
+export const resetPassword = async (req, res) => {
   const { email } = req.body;
 
   try {
@@ -209,7 +219,7 @@ export const resetpassword = async (req, res) => {
   }
 };
 
-export const changepassword = async (req, res) => {
+export const changePassword = async (req, res) => {
   const { password, confirmpassword } = req.body;
   const { token } = req.params;
 
@@ -262,7 +272,7 @@ export const changepassword = async (req, res) => {
   }
 };
 
-export const deleteuser = async (req, res) => {
+export const deleteUser = async (req, res) => {
   if (req.userId.includes("@")) {
     try {
       await User.findOneAndDelete({ email: req.userId }).exec();
