@@ -1,10 +1,16 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import mongoose from "mongoose";
 import User from "../models/userModel.js";
 import { v4 as uuidv4 } from "uuid";
 import { generateRandomStringNumber } from "../utils.js";
+import {
+  transporter,
+  passwordResetRequestMailTemplate,
+  passwordChangeConfirmationMailTemplate,
+} from "../mailService.js";
 
-export const externalSignin = async (req, res) => {
+export const externalsignin = async (req, res) => {
   try {
     const { credential } = req.body;
     const decodedData = jwt.decode(credential);
@@ -12,7 +18,7 @@ export const externalSignin = async (req, res) => {
     const existingUser = await User.findOne({ email: decodedData.email });
     if (!existingUser) {
       if (decodedData.name.toLowerCase() === "admin") {
-        return res.status(400).json({ message: "Invalid username" });
+        return res.status(400).json({ message: "Invalid username." });
       }
 
       const hashedPassword = await bcrypt.hash(uuidv4(), 12);
@@ -30,7 +36,7 @@ export const externalSignin = async (req, res) => {
         user: {
           name: user.name,
           email: user.email,
-          profile: user.profile,
+          friends: user.friends,
           external: true,
           newsletter: user.newsletter,
         },
@@ -41,14 +47,14 @@ export const externalSignin = async (req, res) => {
         user: {
           name: existingUser.name,
           email: existingUser.email,
-          profile: existingUser.profile,
+          friends: existingUser.friends,
           newsletter: existingUser.newsletter,
         },
         token: credential,
       });
     }
   } catch (error) {
-    res.status(500).json({ message: "Something went wrong" });
+    res.status(500).json({ message: "Something went wrong." });
   }
 };
 
@@ -58,7 +64,7 @@ export const signin = async (req, res) => {
   try {
     const existingUser = await User.findOne({ email });
     if (!existingUser)
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ message: "User not found." });
 
     const isPasswordCorect = await bcrypt.compare(
       password,
@@ -66,7 +72,7 @@ export const signin = async (req, res) => {
     );
 
     if (!isPasswordCorect)
-      return res.status(400).json({ message: "Invalid password" });
+      return res.status(400).json({ message: "Invalid password." });
 
     const token = jwt.sign(
       { id: existingUser._id, email: existingUser.email },
@@ -78,30 +84,27 @@ export const signin = async (req, res) => {
       user: {
         name: existingUser.name,
         email: existingUser.email,
-        profile: existingUser.profile,
+        friends: existingUser.friends,
         newsletter: existingUser.newsletter,
       },
       token,
     });
   } catch (error) {
-    res.status(500).json({ message: "Something went wrong" });
+    res.status(500).json({ message: "Something went wrong." });
   }
 };
 
 export const signup = async (req, res) => {
-  const { username, email, password, confirmpassword } = req.body;
+  const { username, email, password } = req.body;
 
   try {
     if (username.toLowerCase() === "admin") {
-      return res.status(400).json({ message: "Invalid username" });
+      return res.status(400).json({ message: "Invalid username." });
     }
 
     const existingUser = await User.findOne({ email });
     if (existingUser)
-      return res.status(400).json({ message: "User already exists" });
-
-    if (password !== confirmpassword)
-      return res.status(400).json({ message: "Passwords don't match" });
+      return res.status(400).json({ message: "User already exists." });
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
@@ -126,13 +129,13 @@ export const signup = async (req, res) => {
       user: {
         name: user.name,
         email: user.email,
-        profile: user.profile,
+        friends: user.friends,
         newsletter: user.newsletter,
       },
       token,
     });
   } catch (error) {
-    res.status(500).json({ message: "Something went wrong" });
+    res.status(500).json({ message: "Something went wrong." });
   }
 };
 
@@ -159,12 +162,125 @@ export const signupdemo = async (req, res) => {
       user: {
         name: user.name,
         email: user.email,
-        profile: user.profile,
+        friends: user.friends,
         newsletter: user.newsletter,
       },
       token,
     });
   } catch (error) {
-    res.status(500).json({ message: "Something went wrong" });
+    res.status(500).json({ message: "Something went wrong." });
+  }
+};
+
+export const resetpassword = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const existingUser = await User.findOne({ email });
+    if (!existingUser || existingUser.external)
+      return res.status(404).json({ message: "User not found." });
+
+    const USER_SECRET = process.env.SECRET;
+
+    const token = jwt.sign(
+      { id: existingUser._id, email: existingUser.email },
+      USER_SECRET,
+      {
+        expiresIn: "15m",
+      }
+    );
+
+    const link = `https://geoevents.pages.dev/resetpassword/#access_token=${token}`;
+
+    await transporter.sendMail({
+      from: "geoevents.team@gmail.com",
+      to: email,
+      subject: "GeoEvents - Password Reset Request.",
+      html: passwordResetRequestMailTemplate(
+        link,
+        existingUser.name,
+        existingUser.email
+      ),
+    });
+
+    res.json({ message: "Password reset link sent." });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const changepassword = async (req, res) => {
+  const { password, confirmpassword } = req.body;
+  const { token } = req.params;
+
+  if (password !== confirmpassword)
+    return res.status(400).json({ message: "Passwords don't match." });
+
+  const decodedToken = jwt.verify(token, process.env.SECRET);
+
+  if (!decodedToken) {
+    return res.status(400).send("Access denied");
+  }
+
+  if (decodedToken.exp * 1000 < new Date().getTime()) {
+    return res
+      .status(400)
+      .json({ message: "Password reset link has expired." });
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 12);
+
+  try {
+    const existingUser = await User.findOne({ _id: decodedToken.id });
+    if (!existingUser || existingUser.external)
+      return res.status(404).json({ message: "User not found." });
+
+    await User.findOneAndUpdate(
+      { _id: decodedToken.id },
+      { password: hashedPassword },
+      {
+        new: true,
+      }
+    ).exec();
+
+    const link = `https://geoevents.pages.dev/`;
+
+    await transporter.sendMail({
+      from: "geoevents.team@gmail.com",
+      to: existingUser.email,
+      subject: "GeoEvents - Password Successfully Changed.",
+      html: passwordChangeConfirmationMailTemplate(
+        link,
+        existingUser.name,
+        existingUser.email
+      ),
+    });
+
+    res.json({ message: "Password successfully changed." });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const deleteuser = async (req, res) => {
+  if (req.userId.includes("@")) {
+    try {
+      await User.findOneAndDelete({ email: req.userId }).exec();
+
+      res.json({ user: null });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  } else {
+    try {
+      if (!mongoose.Types.ObjectId.isValid(req.userId))
+        return res.status(404).json({ message: "User not found." });
+
+      await User.findOneAndDelete({ _id: req.userId }).exec();
+
+      res.json({ user: null });
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
   }
 };

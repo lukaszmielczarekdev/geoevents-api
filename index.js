@@ -3,13 +3,12 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import bodyParser from "body-parser";
-
 import eventRouter from "./routers/event.js";
 import userRoutes from "./routers/user.js";
 
-const app = express();
-
 dotenv.config();
+
+const app = express();
 
 app.use(bodyParser.json({ limit: "5mb", extended: true }));
 app.use(bodyParser.urlencoded({ limit: "5mb", extended: true }));
