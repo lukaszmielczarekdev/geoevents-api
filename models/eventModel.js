@@ -9,7 +9,9 @@ const eventSchema = mongoose.Schema({
   coordinates: { lng: Number, lat: Number },
   description: String,
   logo: String,
-  creator: String,
+  creator: Object,
+  admins: [Object],
+  participants: [Object],
 });
 
 export default mongoose.model("Event", eventSchema);

@@ -44,6 +44,7 @@ export const externalSignIn = async (req, res) => {
 
       res.status(200).json({
         user: {
+          _id: user._id,
           name: user.name,
           email: user.email,
           friends: user.friends,
@@ -55,6 +56,7 @@ export const externalSignIn = async (req, res) => {
     } else {
       res.status(200).json({
         user: {
+          _id: existingUser._id,
           name: existingUser.name,
           email: existingUser.email,
           friends: existingUser.friends,
@@ -85,13 +87,18 @@ export const signIn = async (req, res) => {
       return res.status(400).json({ message: "Invalid password." });
 
     const token = jwt.sign(
-      { id: existingUser._id, email: existingUser.email },
+      {
+        id: existingUser._id,
+        email: existingUser.email,
+        name: existingUser.name,
+      },
       process.env.SECRET,
       { expiresIn: "24h" }
     );
 
     res.status(200).json({
       user: {
+        _id: existingUser._id,
         name: existingUser.name,
         email: existingUser.email,
         friends: existingUser.friends,
@@ -128,7 +135,7 @@ export const signUp = async (req, res) => {
     await user.save();
 
     const token = jwt.sign(
-      { id: user._id, email: user.email },
+      { id: user._id, email: user.email, name: user.name },
       process.env.SECRET,
       {
         expiresIn: "24h",
@@ -137,6 +144,7 @@ export const signUp = async (req, res) => {
 
     res.status(200).json({
       user: {
+        _id: user._id,
         name: user.name,
         email: user.email,
         friends: user.friends,
@@ -155,13 +163,13 @@ export const signUpDemo = async (req, res) => {
     const user = await User.create({
       name: username,
       password: uuidv4(),
-      email: username + "@gmail.com",
+      email: username + "@geoeventsmail.com",
     });
 
     await user.save();
 
     const token = jwt.sign(
-      { id: user._id, email: user.email },
+      { id: user._id, email: user.email, name: user.name },
       process.env.SECRET,
       {
         expiresIn: "24h",
@@ -170,6 +178,7 @@ export const signUpDemo = async (req, res) => {
 
     res.status(200).json({
       user: {
+        _id: user._id,
         name: user.name,
         email: user.email,
         friends: user.friends,
