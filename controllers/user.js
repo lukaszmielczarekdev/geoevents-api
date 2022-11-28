@@ -12,7 +12,12 @@ import {
 
 export const getUsers = async (req, res) => {
   try {
-    const users = await User.find().select({ _id: 1, name: 1, friends: 1 });
+    const users = await User.find().select({
+      _id: 1,
+      name: 1,
+      following: 1,
+      followers: 1,
+    });
 
     res.status(200).json(users);
   } catch (error) {
@@ -47,7 +52,8 @@ export const externalSignIn = async (req, res) => {
           _id: user._id,
           name: user.name,
           email: user.email,
-          friends: user.friends,
+          following: user.following,
+          followers: user.followers,
           external: true,
           newsletter: user.newsletter,
         },
@@ -59,7 +65,8 @@ export const externalSignIn = async (req, res) => {
           _id: existingUser._id,
           name: existingUser.name,
           email: existingUser.email,
-          friends: existingUser.friends,
+          following: existingUser.following,
+          followers: existingUser.followers,
           newsletter: existingUser.newsletter,
         },
         token: credential,
@@ -101,7 +108,8 @@ export const signIn = async (req, res) => {
         _id: existingUser._id,
         name: existingUser.name,
         email: existingUser.email,
-        friends: existingUser.friends,
+        following: existingUser.following,
+        followers: existingUser.followers,
         newsletter: existingUser.newsletter,
       },
       token,
@@ -147,7 +155,8 @@ export const signUp = async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
-        friends: user.friends,
+        following: user.following,
+        followers: user.followers,
         newsletter: user.newsletter,
       },
       token,
@@ -181,7 +190,8 @@ export const signUpDemo = async (req, res) => {
         _id: user._id,
         name: user.name,
         email: user.email,
-        friends: user.friends,
+        following: user.following,
+        followers: user.followers,
         newsletter: user.newsletter,
       },
       token,
@@ -197,7 +207,9 @@ export const resetPassword = async (req, res) => {
   try {
     const existingUser = await User.findOne({ email });
     if (!existingUser || existingUser.external)
-      return res.status(404).json({ message: "User not found." });
+      return res
+        .status(404)
+        .json({ message: "Password cannot be changed or user not found." });
 
     const USER_SECRET = process.env.SECRET;
 
@@ -301,5 +313,146 @@ export const deleteUser = async (req, res) => {
     } catch (error) {
       res.status(500).json({ message: error.message });
     }
+  }
+};
+
+export const follow = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    if (!mongoose.Types.ObjectId.isValid(id))
+      return res.status(404).send("User not found.");
+
+    let activeUser;
+    if (req.userId.includes("@")) {
+      activeUser = await User.findOne({ email: req.userId });
+    } else {
+      activeUser = await User.findOne({ _id: req.userId });
+    }
+
+    let userToFollow;
+    if (id.includes("@")) {
+      userToFollow = await User.findOne({ email: id });
+    } else {
+      userToFollow = await User.findOne({ _id: id });
+    }
+
+    if (id === activeUser._id.toString()) {
+      return res.status(400).send("User cannot be followed.");
+    }
+
+    const ifFollowing = userToFollow.followers.find(
+      (user) => user._id === activeUser._id.toString()
+    );
+
+    if (!ifFollowing) {
+      // userToFallow
+      const userFollowers = [
+        ...userToFollow.followers,
+        { _id: req.userId, name: req.username },
+      ];
+
+      // activeUser
+      const userFollowing = [
+        ...activeUser.following,
+        { _id: userToFollow._id.toString(), name: userToFollow.name },
+      ];
+
+      let updatedUserToFollow;
+      if (id.includes("@")) {
+        updatedUserToFollow = await User.findOneAndUpdate(
+          { email: id },
+          { followers: userFollowers },
+          { new: true }
+        );
+      } else {
+        updatedUserToFollow = await User.findOneAndUpdate(
+          { _id: id },
+          { followers: userFollowers },
+          { new: true }
+        );
+      }
+
+      let updatedActiveUser;
+      if (req.userId.includes("@")) {
+        updatedActiveUser = await User.findOneAndUpdate(
+          { email: req.userId },
+          { following: userFollowing },
+          { new: true }
+        );
+      } else {
+        updatedActiveUser = await User.findOneAndUpdate(
+          { _id: req.userId },
+          { following: userFollowing },
+          { new: true }
+        );
+      }
+
+      const { _id, name, email, following, followers } = updatedActiveUser;
+
+      res.json({
+        activeUser: { _id: _id.toString(), name, email, following, followers },
+        userToFollow: {
+          _id: updatedUserToFollow._id.toString(),
+          name: updatedUserToFollow.name,
+          following: updatedUserToFollow.following,
+          followers: updatedUserToFollow.followers,
+        },
+      });
+    } else {
+      // userToFollow
+      const userFollowers = userToFollow.followers.filter(
+        (user) => user._id.toString() !== req.userId
+      );
+
+      // activeUser
+      const userFollowing = activeUser.following.filter(
+        (user) => user._id.toString() !== userToFollow._id.toString()
+      );
+
+      let updatedUserToFollow;
+      if (id.includes("@")) {
+        updatedUserToFollow = await User.findOneAndUpdate(
+          { email: id },
+          { followers: userFollowers },
+          { new: true }
+        );
+      } else {
+        updatedUserToFollow = await User.findOneAndUpdate(
+          { _id: id },
+          { followers: userFollowers },
+          { new: true }
+        );
+      }
+
+      let updatedActiveUser;
+      if (req.userId.includes("@")) {
+        updatedActiveUser = await User.findOneAndUpdate(
+          { email: req.userId },
+          { following: userFollowing },
+          { new: true }
+        );
+      } else {
+        updatedActiveUser = await User.findOneAndUpdate(
+          { _id: req.userId },
+          { following: userFollowing },
+          { new: true }
+        );
+      }
+
+      const { _id, name, email, following, followers } = updatedActiveUser;
+
+      res.json({
+        activeUser: { _id: _id.toString(), name, email, following, followers },
+        userToFollow: {
+          _id: updatedUserToFollow._id.toString(),
+          name: updatedUserToFollow.name,
+          following: updatedUserToFollow.following,
+          followers: updatedUserToFollow.followers,
+        },
+      });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Something went wrong." });
   }
 };

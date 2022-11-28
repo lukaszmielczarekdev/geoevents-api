@@ -20,7 +20,14 @@ const userSchema = mongoose.Schema({
     type: Boolean,
     default: false,
   },
-  friends: [Object],
+  following: {
+    type: [Object],
+    default: [],
+  },
+  followers: {
+    type: [Object],
+    default: [],
+  },
   createdAt: { type: Date, expires: "24h", default: Date.now },
 });
 
