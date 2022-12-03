@@ -1,17 +1,20 @@
 import mongoose from "mongoose";
 
-const eventSchema = mongoose.Schema({
-  title: String,
-  start: String,
-  end: String,
-  category: String,
-  location: String,
-  coordinates: { lng: Number, lat: Number },
-  description: String,
-  logo: String,
-  creator: Object,
-  admins: [Object],
-  participants: [Object],
-});
+const eventSchema = mongoose.Schema(
+  {
+    title: { type: String, min: 5, max: 40 },
+    start: String,
+    end: String,
+    category: String,
+    location: String,
+    coordinates: { lng: Number, lat: Number },
+    description: { type: String, min: 5, max: 800 },
+    logo: String,
+    creator: Object,
+    admins: [Object],
+    participants: [Object],
+  },
+  { timestamps: true }
+);
 
 export default mongoose.model("Event", eventSchema);

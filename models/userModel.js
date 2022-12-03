@@ -1,9 +1,9 @@
 import mongoose from "mongoose";
 
 const userSchema = mongoose.Schema({
-  name: { type: String, required: true },
+  name: { type: String, required: true, unique: true, min: 5, max: 40 },
   password: { type: String, required: true },
-  email: { type: String, required: true },
+  email: { type: String, required: true, unique: true, min: 5, max: 40 },
   lastLogged: {
     type: String,
     default: new Date().toLocaleDateString("en-GB"),
@@ -25,6 +25,10 @@ const userSchema = mongoose.Schema({
     default: [],
   },
   followers: {
+    type: [Object],
+    default: [],
+  },
+  timeline: {
     type: [Object],
     default: [],
   },
