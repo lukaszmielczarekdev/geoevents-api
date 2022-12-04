@@ -1,5 +1,6 @@
 import Post from "../models/postModel.js";
 import User from "../models/userModel.js";
+import mongoose from "mongoose";
 
 export const getPosts = async (req, res) => {
   try {
@@ -25,7 +26,7 @@ export const getPosts = async (req, res) => {
 };
 
 export const addPost = async (req, res) => {
-  const { postData } = req.body;
+  const postData = req.body;
 
   const newPost = new Post({
     ...postData,
@@ -37,5 +38,35 @@ export const addPost = async (req, res) => {
     res.status(201).json(newPost);
   } catch (error) {
     res.status(409).json({ message: error.message });
+  }
+};
+
+export const likePost = async (req, res) => {
+  const { id: _id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(_id))
+    return res.status(404).send("Post not found.");
+
+  const existingPost = await Post.findOne({ _id });
+
+  const ifLiked = existingPost.likes.find((user) => user._id === req.userId);
+
+  if (ifLiked) {
+    const likes = existingPost.likes.filter((user) => user._id !== req.userId);
+    const updatedPost = await Post.findOneAndUpdate(
+      { _id },
+      { likes },
+      { new: true }
+    );
+    res.json(updatedPost);
+  } else {
+    const updatedPost = await Post.findOneAndUpdate(
+      { _id },
+      {
+        likes: [...existingPost.likes, { _id: req.userId, name: req.username }],
+      },
+      { new: true }
+    );
+    res.json(updatedPost);
   }
 };
