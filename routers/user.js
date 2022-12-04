@@ -8,13 +8,15 @@ import {
   changePassword,
   deleteUser,
   getUsers,
+  getUser,
   follow,
 } from "../controllers/user.js";
 import auth from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.get("/getusers", getUsers);
+router.get("/getuser/:id", auth, getUser);
+router.get("/getusers", auth, getUsers);
 router.post("/signin", signIn);
 router.post("/signup", signUp);
 router.post("/signupdemo", signUpDemo);

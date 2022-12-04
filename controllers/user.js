@@ -10,6 +10,23 @@ import {
   passwordChangeConfirmationMailTemplate,
 } from "../mailService.js";
 
+export const getUser = async (req, res) => {
+  const { id: username } = req.params;
+
+  try {
+    const user = await User.findOne({ name: username }).select({
+      _id: 1,
+      name: 1,
+      following: 1,
+      followers: 1,
+    });
+
+    res.status(200).json(user);
+  } catch (error) {
+    res.status(404).json({ message: error.message });
+  }
+};
+
 export const getUsers = async (req, res) => {
   try {
     const users = await User.find().select({
@@ -30,7 +47,10 @@ export const externalSignIn = async (req, res) => {
     const { credential } = req.body;
     const decodedData = jwt.decode(credential);
 
-    const existingUser = await User.findOne({ email: decodedData.email });
+    const existingUser = await User.findOne({
+      $or: [{ email: decodedData.email }, { name: decodedData.name }],
+    });
+
     if (!existingUser) {
       if (decodedData.name.toLowerCase() === "admin") {
         return res.status(400).json({ message: "Invalid username." });
@@ -127,9 +147,14 @@ export const signUp = async (req, res) => {
       return res.status(400).json({ message: "Invalid username." });
     }
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({
+      $or: [{ email }, { name: username }],
+    });
+
     if (existingUser)
-      return res.status(400).json({ message: "User already exists." });
+      return res
+        .status(400)
+        .json({ message: "Username or email is already taken." });
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
