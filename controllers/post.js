@@ -41,6 +41,21 @@ export const addPost = async (req, res) => {
   }
 };
 
+export const deletePost = async (req, res) => {
+  const { id: _id } = req.params;
+
+  try {
+    if (!mongoose.Types.ObjectId.isValid(_id))
+      return res.status(404).send("Post not found.");
+
+    await Post.findOneAndRemove({ _id, "creator._id": req.userId });
+
+    res.json(null);
+  } catch (error) {
+    res.status(409).json({ message: error.message });
+  }
+};
+
 export const likePost = async (req, res) => {
   const { id: _id } = req.params;
 
