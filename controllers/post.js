@@ -2,7 +2,7 @@ import Post from "../models/postModel.js";
 import User from "../models/userModel.js";
 import mongoose from "mongoose";
 
-export const getPosts = async (req, res) => {
+export const getFollowingPosts = async (req, res) => {
   try {
     let followingUsers;
 
@@ -20,6 +20,20 @@ export const getPosts = async (req, res) => {
       .limit(25);
 
     res.status(200).json(targetedPosts);
+  } catch (error) {
+    res.status(404).json({ message: error.message });
+  }
+};
+
+export const getUsersPosts = async (req, res) => {
+  const { id: _id } = req.params;
+
+  try {
+    const usersPosts = await Post.find({ "creator.name": _id })
+      .sort({ createdAt: -1 })
+      .limit(25);
+
+    res.status(200).json(usersPosts);
   } catch (error) {
     res.status(404).json({ message: error.message });
   }

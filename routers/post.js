@@ -1,6 +1,7 @@
 import express from "express";
 import {
-  getPosts,
+  getFollowingPosts,
+  getUsersPosts,
   addPost,
   likePost,
   deletePost,
@@ -9,7 +10,8 @@ import auth from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.get("/", auth, getPosts);
+router.get("/following", auth, getFollowingPosts);
+router.get("/user/:id", auth, getUsersPosts);
 router.post("/", auth, addPost);
 router.patch("/like/:id", auth, likePost);
 router.delete("/:id", auth, deletePost);
