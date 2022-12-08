@@ -7,6 +7,7 @@ import {
   resetPassword,
   changePassword,
   deleteUser,
+  updateUser,
   getUsers,
   getUser,
   follow,
@@ -22,6 +23,7 @@ router.post("/signup", signUp);
 router.post("/signupdemo", signUpDemo);
 router.post("/externalsignin", externalSignIn);
 router.post("/resetpassword", resetPassword);
+router.patch("/update", auth, updateUser);
 router.patch("/changepassword/:token", changePassword);
 router.patch("/follow/:id", auth, follow);
 router.delete("/:id", auth, deleteUser);

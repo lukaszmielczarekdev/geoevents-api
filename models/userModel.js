@@ -28,10 +28,11 @@ const userSchema = mongoose.Schema({
     type: [Object],
     default: [],
   },
-  timeline: {
-    type: [Object],
-    default: [],
+  description: {
+    type: String,
+    default: "",
   },
+  avatar: { type: String, default: "" },
   createdAt: { type: Date, expires: "24h", default: Date.now },
 });
 

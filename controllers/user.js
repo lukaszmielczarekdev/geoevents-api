@@ -19,6 +19,8 @@ export const getUser = async (req, res) => {
       name: 1,
       following: 1,
       followers: 1,
+      description: 1,
+      avatar: 1,
     });
 
     res.status(200).json(user);
@@ -34,6 +36,8 @@ export const getUsers = async (req, res) => {
       name: 1,
       following: 1,
       followers: 1,
+      description: 1,
+      avatar: 1,
     });
 
     res.status(200).json(users);
@@ -74,8 +78,9 @@ export const externalSignIn = async (req, res) => {
           email: user.email,
           following: user.following,
           followers: user.followers,
+          description: user.description,
+          avatar: user.avatar,
           external: true,
-          newsletter: user.newsletter,
         },
         token: credential,
       });
@@ -88,6 +93,8 @@ export const externalSignIn = async (req, res) => {
           following: existingUser.following,
           followers: existingUser.followers,
           newsletter: existingUser.newsletter,
+          description: existingUser.description,
+          avatar: existingUser.avatar,
         },
         token: credential,
       });
@@ -130,7 +137,8 @@ export const signIn = async (req, res) => {
         email: existingUser.email,
         following: existingUser.following,
         followers: existingUser.followers,
-        newsletter: existingUser.newsletter,
+        description: existingUser.description,
+        avatar: existingUser.avatar,
       },
       token,
     });
@@ -183,6 +191,8 @@ export const signUp = async (req, res) => {
         following: user.following,
         followers: user.followers,
         newsletter: user.newsletter,
+        description: user.description,
+        avatar: user.avatar,
       },
       token,
     });
@@ -218,6 +228,8 @@ export const signUpDemo = async (req, res) => {
         following: user.following,
         followers: user.followers,
         newsletter: user.newsletter,
+        description: user.description,
+        avatar: user.avatar,
       },
       token,
     });
@@ -413,15 +425,26 @@ export const follow = async (req, res) => {
         );
       }
 
-      const { _id, name, email, following, followers } = updatedActiveUser;
+      const { _id, name, email, following, followers, avatar, description } =
+        updatedActiveUser;
 
       res.json({
-        activeUser: { _id: _id.toString(), name, email, following, followers },
+        activeUser: {
+          _id: _id.toString(),
+          name,
+          email,
+          following,
+          followers,
+          description,
+          avatar,
+        },
         userToFollow: {
           _id: updatedUserToFollow._id.toString(),
           name: updatedUserToFollow.name,
           following: updatedUserToFollow.following,
           followers: updatedUserToFollow.followers,
+          description: updatedUserToFollow.description,
+          avatar: updatedUserToFollow.avatar,
         },
       });
     } else {
@@ -465,19 +488,85 @@ export const follow = async (req, res) => {
         );
       }
 
-      const { _id, name, email, following, followers } = updatedActiveUser;
+      const { _id, name, email, following, followers, description, avatar } =
+        updatedActiveUser;
 
       res.json({
-        activeUser: { _id: _id.toString(), name, email, following, followers },
+        activeUser: {
+          _id: _id.toString(),
+          name,
+          email,
+          following,
+          followers,
+          description,
+          avatar,
+        },
         userToFollow: {
           _id: updatedUserToFollow._id.toString(),
           name: updatedUserToFollow.name,
           following: updatedUserToFollow.following,
           followers: updatedUserToFollow.followers,
+          description: updatedUserToFollow.description,
+          avatar: updatedUserToFollow.avatar,
         },
       });
     }
   } catch (error) {
     res.status(500).json({ message: "Something went wrong." });
+  }
+};
+
+export const updateUser = async (req, res) => {
+  const { dataType, data } = req.body;
+
+  if (req.userId.includes("@")) {
+    try {
+      const updatedUser = await User.findOneAndUpdate(
+        { email: req.userId },
+        { [dataType]: data },
+        {
+          new: true,
+        }
+      )
+        .select({
+          _id: 1,
+          name: 1,
+          following: 1,
+          followers: 1,
+          description: 1,
+          avatar: 1,
+        })
+        .exec();
+
+      res.json(updatedUser);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  } else {
+    if (!mongoose.Types.ObjectId.isValid(req.userId))
+      return res.status(404).json({ message: "User not found" });
+
+    try {
+      const updatedUser = await User.findOneAndUpdate(
+        { _id: req.userId },
+        { [dataType]: data },
+        {
+          new: true,
+        }
+      )
+        .select({
+          _id: 1,
+          name: 1,
+          following: 1,
+          followers: 1,
+          description: 1,
+          avatar: 1,
+        })
+        .exec();
+
+      res.json(updatedUser);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
   }
 };
