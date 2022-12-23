@@ -6,6 +6,7 @@ import {
   signUpDemo,
   resetPassword,
   changePassword,
+  updatePassword,
   deleteUser,
   updateUser,
   getUsers,
@@ -23,6 +24,7 @@ router.post("/signup", signUp);
 router.post("/signupdemo", signUpDemo);
 router.post("/externalsignin", externalSignIn);
 router.post("/resetpassword", resetPassword);
+router.patch("/updatepassword", auth, updatePassword);
 router.patch("/update", auth, updateUser);
 router.patch("/changepassword/:token", changePassword);
 router.patch("/follow/:id", auth, follow);

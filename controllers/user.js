@@ -330,6 +330,58 @@ export const changePassword = async (req, res) => {
   }
 };
 
+export const updatePassword = async (req, res) => {
+  const { oldpassword, newpassword } = req.body;
+
+  if (req.userId.includes("@")) {
+    try {
+      res.json(null);
+    } catch (error) {
+      res.status(500).json({ message: error.message });
+    }
+  } else {
+    try {
+      const existingUser = await User.findOne({ _id: req.userId });
+
+      if (!existingUser)
+        return res.status(404).json({ message: "User not found." });
+
+      const isPasswordCorect = await bcrypt.compare(
+        oldpassword,
+        existingUser.password
+      );
+
+      if (!isPasswordCorect)
+        return res.status(400).json({ message: "Invalid password." });
+
+      const hashedPassword = await bcrypt.hash(newpassword, 12);
+
+      const updatedUser = await User.findOneAndUpdate(
+        { _id: req.userId },
+        { password: hashedPassword },
+        {
+          new: true,
+        }
+      ).exec();
+
+      const token = jwt.sign(
+        { id: updatedUser._id, email: updatedUser.email },
+        process.env.SECRET,
+        {
+          expiresIn: "24h",
+        }
+      );
+
+      res.json({
+        token,
+        message: "Password successfully updated.",
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Something went wrong." });
+    }
+  }
+};
+
 export const deleteUser = async (req, res) => {
   if (req.userId.includes("@")) {
     try {
