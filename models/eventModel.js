@@ -9,6 +9,10 @@ const eventSchema = mongoose.Schema(
     location: String,
     coordinates: { lng: Number, lat: Number },
     description: { type: String, min: 5, max: 800 },
+    type: {
+      type: String,
+      default: "event",
+    },
     logo: String,
     creator: Object,
     admins: [Object],

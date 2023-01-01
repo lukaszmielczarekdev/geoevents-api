@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 import cors from "cors";
 import bodyParser from "body-parser";
 import eventRouter from "./routers/event.js";
+import businessRouter from "./routers/business.js";
 import userRoutes from "./routers/user.js";
 import postRoutes from "./routers/post.js";
 
@@ -15,6 +16,7 @@ app.use(bodyParser.json({ limit: "15mb", extended: true }));
 app.use(bodyParser.urlencoded({ limit: "15mb", extended: true }));
 app.use(cors());
 app.use("/events", eventRouter);
+app.use("/businesses", businessRouter);
 app.use("/users", userRoutes);
 app.use("/posts", postRoutes);
 
