@@ -11,17 +11,30 @@ import {
 } from "../mailService.js";
 
 export const getUser = async (req, res) => {
-  const { id: username } = req.params;
+  const { id: _id } = req.params;
 
   try {
-    const user = await User.findOne({ name: username }).select({
-      _id: 1,
-      name: 1,
-      following: 1,
-      followers: 1,
-      description: 1,
-      avatar: 1,
-    });
+    let user;
+
+    if (typeof _id === "string") {
+      user = await User.findOne({ name: _id }).select({
+        _id: 1,
+        name: 1,
+        following: 1,
+        followers: 1,
+        description: 1,
+        avatar: 1,
+      });
+    } else {
+      user = await User.findOne({ _id }).select({
+        _id: 1,
+        name: 1,
+        following: 1,
+        followers: 1,
+        description: 1,
+        avatar: 1,
+      });
+    }
 
     res.status(200).json(user);
   } catch (error) {
