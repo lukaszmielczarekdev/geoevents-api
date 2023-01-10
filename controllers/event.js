@@ -108,8 +108,6 @@ export const rateEvent = async (req, res) => {
         },
       ];
 
-      // Cast to Number failed for value "NaN" (type number) at path "rating.averag
-
       const updatedEvent = await Event.findOneAndUpdate(
         { _id },
         {
@@ -128,6 +126,21 @@ export const rateEvent = async (req, res) => {
         .status(400)
         .json({ message: "You already rated this event. Thank you." });
     }
+  } catch (error) {
+    res.status(409).json({ message: error.message });
+  }
+};
+
+export const deleteEvent = async (req, res) => {
+  const { id: _id } = req.params;
+
+  try {
+    if (!mongoose.Types.ObjectId.isValid(_id))
+      return res.status(404).send("Event not found.");
+
+    await Event.findOneAndRemove({ _id, "creator._id": req.userId });
+
+    res.json(null);
   } catch (error) {
     res.status(409).json({ message: error.message });
   }
