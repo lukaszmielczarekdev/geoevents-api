@@ -1,4 +1,5 @@
 import Business from "../models/businessModel.js";
+import { calculateAverageRate } from "../utils.js";
 import mongoose from "mongoose";
 
 export const getBusinesses = async (req, res) => {
@@ -16,8 +17,8 @@ export const addBusiness = async (req, res) => {
 
   const newBusiness = new Business({
     ...data,
-    creator: { id: req.userId, name: req.username },
-    owners: [{ id: req.userId, name: req.username }],
+    creator: { _id: req.userId, name: req.username },
+    owners: [{ _id: req.userId, name: req.username }],
   });
 
   try {
@@ -75,6 +76,50 @@ export const deleteBusiness = async (req, res) => {
     await Business.findOneAndRemove({ _id, "creator._id": req.userId });
 
     res.json(null);
+  } catch (error) {
+    res.status(409).json({ message: error.message });
+  }
+};
+
+export const rateBusiness = async (req, res) => {
+  const { id: _id } = req.params;
+  const { rating } = req.body;
+
+  if (!mongoose.Types.ObjectId.isValid(_id))
+    return res.status(404).send("Business not found.");
+
+  try {
+    const existingBusiness = await Business.findOne({ _id });
+    const rated = existingBusiness.rating.rates.find(
+      (user) => user._id === req.userId
+    );
+
+    if (!rated) {
+      const updatedRates = [
+        ...existingBusiness.rating.rates,
+        {
+          _id: req.userId,
+          rating,
+        },
+      ];
+
+      const updatedBusiness = await Business.findOneAndUpdate(
+        { _id },
+        {
+          rating: {
+            rates: updatedRates,
+            ratesNumber: updatedRates.length,
+            average: calculateAverageRate(updatedRates),
+          },
+        },
+        { new: true }
+      );
+      res.json(updatedBusiness);
+    } else {
+      res
+        .status(400)
+        .json({ message: "You already rated this business. Thank you." });
+    }
   } catch (error) {
     res.status(409).json({ message: error.message });
   }

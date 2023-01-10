@@ -20,6 +20,20 @@ const businessSchema = mongoose.Schema(
       type: [Object],
       default: [],
     },
+    rating: {
+      rates: {
+        type: [Object],
+        default: [],
+      },
+      ratesNumber: {
+        type: Number,
+        default: 0,
+      },
+      average: {
+        type: Number,
+        default: 0,
+      },
+    },
   },
   { timestamps: true }
 );

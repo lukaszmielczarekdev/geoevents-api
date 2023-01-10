@@ -17,6 +17,20 @@ const eventSchema = mongoose.Schema(
     creator: Object,
     admins: [Object],
     participants: [Object],
+    rating: {
+      rates: {
+        type: [Object],
+        default: [],
+      },
+      ratesNumber: {
+        type: Number,
+        default: 0,
+      },
+      average: {
+        type: Number,
+        default: 0,
+      },
+    },
   },
   { timestamps: true }
 );
